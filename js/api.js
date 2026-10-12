@@ -1,7 +1,3 @@
-/* DEMO ADAPTER. Thay lớp này bằng API của backend khi dùng dữ liệu thật.
-   Không có kết nối MQTT, email hoặc xác thực phía máy chủ trong bản này.
-   Tài khoản đăng ký được lưu cục bộ, mật khẩu băm PBKDF2; đây vẫn là prototype.
-   SG.on/emit giữ giao diện tách khỏi cách lấy dữ liệu. */
 (function () {
   const listeners = {};
   SG.on = (event, callback) => (listeners[event] ||= []).push(callback);
@@ -13,7 +9,7 @@
     const t = ts / 1000;
     const values = {temperature:+(27.2 + 1.8 * Math.sin(t / 58) + .3 * Math.cos(t / 13)).toFixed(1), humidity:Math.round(66 + 6 * Math.cos(t / 90) + Math.sin(t / 17)), light:Math.round(780 + 220 * Math.sin(t / 110) + 25 * Math.cos(t / 21))};
     return SG.TYPES.map(type => ({id:++readingID,type,value:values[type],ts}));
-  }
+  } //tính toán giả lập giá trị cho chart lấy theo thời gian thực
   for (let i = 59; i >= 0; i--) S.readings.push(...batch(now - i * 5000));
   S.readings.reverse();
   const seed = [

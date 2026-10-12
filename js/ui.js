@@ -58,16 +58,16 @@
     const S=SG.state,types=[SG.TYPES.includes(mode)?mode:'temperature'],width=Math.max(270,element.clientWidth||500);
     const activeType=document.activeElement?.dataset.chartType;
     if (!S.ready || !S.readings.length) { element.innerHTML=`<div class="chart-empty">${SG.empty(S.ready?'Chưa có dữ liệu':'Đang tải dữ liệu…',S.ready?'Dữ liệu mới sẽ xuất hiện tại đây.':'Chờ một chút để chuẩn bị khu vườn.')}</div>`;return; }
-    const compact=false;
+    const compact=false,chartH=matchMedia('(min-width:1001px)').matches&&element.clientHeight?Math.max(130,Math.min(340,element.clientHeight-104)):205;
     element.classList.toggle('chart-multiple',compact);
-    const series=types.map(type=>({type,points:S.readings.filter(r=>r.type===type).slice(0,12).reverse()})).filter(s=>s.points.length);
+    const series=types.map(type=>({type,points:S.readings.filter(r=>r.type===type).slice(0,12).reverse()})).filter(s=>s.points.length); //lấy dữ liệu cho chart
     element.innerHTML=series.map(({type,points})=>{
       const meta=SG.META[type],n=points.length,values=points.map(p=>p.value),summary=compact?SG.val(points.at(-1)):(S.online?'Mỗi 5 giây':'Đã dừng cập nhật');
-      const built=chartSVG(type,points,width,compact?88:205,compact);
+      const built=chartSVG(type,points,width,chartH,compact);
       return `<div class="${compact?'mini-chart':'single-chart'}" style="--chart-color:${meta.c}"><div class="chart-summary"><span><i class="color-dot"></i>${meta.l} (${meta.u})</span><b>${summary}</b></div><div class="chart-box" tabindex="0" role="group" data-chart-type="${type}" aria-label="Biểu đồ ${meta.l}. Dùng phím mũi tên trái hoặc phải để đọc từng điểm.">${built.svg}<div class="tip" hidden></div></div>${!compact?`<div class="chart-stats"><div><span>Thấp nhất</span><b>${Math.min(...values).toFixed(meta.d)} ${meta.u}</b></div><div><span>Trung bình</span><b>${(values.reduce((a,b)=>a+b,0)/n).toFixed(meta.d)} ${meta.u}</b></div><div><span>Cao nhất</span><b>${Math.max(...values).toFixed(meta.d)} ${meta.u}</b></div></div>`:''}</div>`;
-    }).join('')+`<p class="chart-keyboard" ${compact?'':'aria-live="polite"'}>${compact?'Mỗi cảm biến có thang đo riêng. Cùng 12 thời điểm gần nhất.':'Di chuột hoặc dùng phím ← → trên biểu đồ để xem từng lần đo.'}</p>`;
+    }).join('')+`<p class="chart-keyboard" ${compact?'':'aria-live="polite"'}>${compact?'':''}</p>`;
     series.forEach(({type,points})=>{
-      const box=element.querySelector(`[data-chart-type="${type}"]`),tip=box.querySelector('.tip'),line=box.querySelector('.cursor-line'),built=chartSVG(type,points,width,205,compact);
+      const box=element.querySelector(`[data-chart-type="${type}"]`),tip=box.querySelector('.tip'),line=box.querySelector('.cursor-line'),built=chartSVG(type,points,width,chartH,compact);
       let index=points.length-1;
       function show(i,keyboard=false) {
         index=Math.max(0,Math.min(points.length-1,i));

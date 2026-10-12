@@ -2,21 +2,20 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#247451">
-<meta name="description" content="Smart Garden — theo dõi cảm biến và điều khiển khu vườn trong một không gian rõ ràng, dễ sử dụng.">
+<meta name="description" content="Smart Garden — theo dõi cảm biến và điều khiển thiết bị.">
 <title>Smart Garden · Vườn thông minh</title><link rel="icon" href="assets/leaf.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/icons/style.css"><link rel="stylesheet" href="css/fonts.css"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/base.css"><link rel="stylesheet" href="css/components.css"><link rel="stylesheet" href="css/layout.css"><link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
+
 <main id="auth" class="auth-shell">
- <section class="auth-story" aria-label="Giới thiệu Smart Garden">
+ <section class="auth-story" aria-label="Smart Garden">
   <div class="brand"><span class="brand-ic"><i class="ph ph-leaf" aria-hidden="true"></i></span><span>Smart Garden<small>VƯỜN THÔNG MINH</small></span></div>
-  <div class="story-copy"><span class="eyebrow">MỘT GÓC XANH. LUÔN TRONG TẦM TAY.</span><h1>Hiểu khu vườn.<br>Chăm từng thay đổi.</h1><p>Theo dõi môi trường và điều khiển thiết bị trong một không gian thật dễ sử dụng.</p></div>
   <div class="garden-art" aria-hidden="true"><svg viewBox="0 0 500 280" fill="none"><circle cx="383" cy="64" r="32" fill="#e6cd8e"/><path d="M20 242H480M70 232V99L245 20L420 99V232M70 99H420M245 20V242M153 62V242M337 62V242" stroke="#bad3bc" stroke-opacity=".25" stroke-width="2"/><path d="M91 243C117 190 156 217 190 184C229 147 260 220 311 196C369 167 417 205 460 183V270H40Z" fill="#397b5b"/><path d="M183 236V139M183 200C135 202 120 177 121 156C161 152 183 173 183 200ZM183 168C224 169 246 146 245 124C208 122 185 139 183 168ZM318 239V173M318 210C283 210 265 189 267 173C298 172 317 188 318 210ZM318 188C345 188 362 171 361 155C334 153 318 169 318 188Z" fill="#b6d4a6" stroke="#b6d4a6" stroke-width="3" stroke-linejoin="round"/><path d="M171 141C146 121 150 95 169 80C191 97 198 120 183 140M312 175C294 156 299 137 312 126C330 143 332 158 321 174" fill="#deebc7"/><path d="M50 253H450" stroke="#c1d8bb" stroke-opacity=".4" stroke-width="2"/></svg></div>
-  <div class="story-footer"><span><i class="ph ph-plant" aria-hidden="true"></i> Công nghệ nhỏ, góc xanh lớn.</span><span>01 / SMART GARDEN</span></div>
  </section>
  <div class="auth-content">
   <form class="login-card" id="lf" novalidate>
-   <span class="auth-kicker"><span class="status-dot"></span> CHÀO MỪNG TRỞ LẠI</span><div><h2>Đăng nhập</h2><p class="intro">Khu vườn của bạn, ngay tại đây.</p></div>
+   <h2>Đăng nhập</h2>
    <p class="notice" id="auth-success" role="status" hidden></p>
    <label class="field">Tài khoản<input id="lu" type="text" autocomplete="username" placeholder="Nhập tài khoản" required aria-describedby="le"></label>
    <label class="field">Mật khẩu<span class="pw"><input id="lp" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required aria-describedby="le"><button type="button" id="lt" class="icon-btn" aria-label="Hiện mật khẩu" aria-pressed="false"><i class="ph ph-eye" aria-hidden="true"></i></button></span></label>
@@ -26,8 +25,8 @@
   </form>
 
   <form class="login-card register-card hide" id="rf" novalidate>
-   <span class="auth-kicker"><span class="status-dot"></span> BẮT ĐẦU CÙNG SMART GARDEN</span>
-   <div><h2>Tạo tài khoản</h2><p class="intro">Một tài khoản để chăm sóc khu vườn của bạn.</p></div>
+   
+   <h2>Tạo tài khoản</h2>
    <div class="register-fields">
     <label class="field full">Họ và tên<input id="rn" name="name" autocomplete="name" maxlength="80" placeholder="Nhập họ và tên" required></label>
     <label class="field full">Email<input id="re" name="email" type="email" autocomplete="email" maxlength="120" placeholder="Nhập email" required></label>
@@ -39,16 +38,17 @@
    <p class="auth-alternate">Đã có tài khoản? <button type="button" class="text-btn" id="register-back">Đăng nhập</button></p>
   </form>
   <form class="login-card hide" id="ff" novalidate>
-   <button type="button" class="text-btn back" id="fback"><i class="ph ph-arrow-left" aria-hidden="true"></i> Quay lại đăng nhập</button><div><h2>Quên mật khẩu?</h2><p class="intro">Nhập tài khoản hoặc email để thử luồng khôi phục.</p></div>
-   <label class="field">Tài khoản hoặc email<input id="fe" type="text" autocomplete="username" placeholder="Nhập tài khoản hoặc email" required></label><p class="err" id="fr" role="alert"></p><p class="notice" id="fm" role="status" hidden></p><button class="btn primary auth-submit" id="fb">Thử yêu cầu khôi phục</button><p class="auth-disclaimer">Bản demo không gửi email và không thay đổi mật khẩu.</p>
+   <button type="button" class="text-btn back" id="fback"><i class="ph ph-arrow-left" aria-hidden="true"></i> Quay lại đăng nhập</button><h2>Quên mật khẩu?</h2>
+   <label class="field">Tài khoản hoặc email<input id="fe" type="text" autocomplete="username" placeholder="Nhập tài khoản hoặc email" required></label><p class="err" id="fr" role="alert"></p><p class="notice" id="fm" role="status" hidden></p><button class="btn primary auth-submit" id="fb">Gửi yêu cầu</button><p class="auth-disclaimer">Bản demo không gửi email và không thay đổi mật khẩu.</p>
   </form>
  </div>
 </main>
+
 <div id="app" class="hide">
  <a class="skip-link" href="#main-content">Đến nội dung chính</a>
  <aside id="side" class="side" aria-label="Thanh điều hướng">
   <div class="side-brand"><div class="brand"><span class="brand-ic"><i class="ph ph-leaf" aria-hidden="true"></i></span><span>Smart Garden<small>VƯỜN THÔNG MINH</small></span></div><button class="icon-btn side-close" id="close-menu" aria-label="Đóng menu"><i class="ph ph-x" aria-hidden="true"></i></button></div>
-  <div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
+  
   <nav aria-label="Điều hướng chính">
    <button data-p="home"><i class="ph ph-squares-four" aria-hidden="true"></i><span>Tổng quan</span><i class="ph ph-caret-right nav-arrow" aria-hidden="true"></i></button>
    <button data-p="data"><i class="ph ph-chart-line-up" aria-hidden="true"></i><span>Dữ liệu cảm biến</span><i class="ph ph-caret-right nav-arrow" aria-hidden="true"></i></button>
@@ -59,19 +59,20 @@
  </aside>
  <div id="scrim" class="scrim" aria-hidden="true"></div>
  <div class="workspace">
-  <header class="topbar"><button class="icon-btn menu" id="menu" aria-label="Mở menu" aria-expanded="false" aria-controls="side"><i class="ph ph-list" aria-hidden="true"></i></button><div class="breadcrumb"><span>Không gian của bạn</span><i class="ph ph-caret-right" aria-hidden="true"></i><b id="crumb">Tổng quan</b></div><div class="top-actions"><button class="avatar small" id="profile-shortcut" aria-label="Mở hồ sơ">D</button></div></header>
-  <main id="main-content" class="main" tabindex="-1">
-   <div class="page-heading"><div><p class="eyebrow" id="page-kicker">GÓC NHÌN KHU VƯỜN</p><h1 id="page-title" tabindex="-1">Tổng quan</h1><p id="page-description">Những thay đổi nhỏ, được theo dõi rõ ràng.</p></div></div>
+  <header class="topbar"><button class="icon-btn menu" id="menu" aria-label="Mở menu" aria-expanded="false" aria-controls="side"><i class="ph ph-list" aria-hidden="true"></i></button><div class="breadcrumb"><b id="crumb">Tổng quan</b></div><div class="top-actions"><button class="avatar small" id="profile-shortcut" aria-label="Mở hồ sơ">D</button></div></header>
+  <main id="main-content" class="main" tabindex="-1"><h1 id="page-title" class="sr" tabindex="-1">Tổng quan</h1>
+   
    <section id="p-home" aria-label="Tổng quan"><div class="metrics" id="metrics"></div><div class="dash"><section class="card chart" id="chart" aria-label="Biểu đồ cảm biến"></section><section class="card ctrl" id="ctrl" aria-label="Điều khiển thiết bị"></section></div></section>
    <section id="p-data" class="hide" aria-label="Dữ liệu cảm biến">
     
-    <div class="card table-card"><div class="section-head table-heading"><div><h2>Bản ghi cảm biến</h2><p id="data-count">Đang tải dữ liệu…</p></div></div><div class="filters"><label class="field">Tìm theo<select id="d-by"><option value="all">Tất cả</option><option value="sensor">Cảm biến</option><option value="time">Thời gian</option></select></label><label class="field grow">Từ khóa<span class="search"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input type="search" id="d-q" placeholder="Tìm theo cảm biến hoặc thời gian…"></span></label><button class="btn quiet" id="d-cl"><i class="ph ph-x" aria-hidden="true"></i> Xóa lọc</button></div><div class="tw" tabindex="0" role="region" aria-label="Bảng dữ liệu cảm biến, cuộn ngang trên màn hình nhỏ"><table><thead><tr><th scope="col">Mã bản ghi</th><th scope="col">Cảm biến</th><th scope="col" class="num">Giá trị đo</th><th scope="col" id="d-time-head" aria-sort="descending"><button class="sort" id="d-sort">Thời gian ghi nhận</button></th></tr></thead><tbody id="d-body"></tbody></table></div><div class="pager" id="d-pg"></div></div><p class="page-foot"><i class="ph ph-clock" aria-hidden="true"></i> Thời gian hiển thị theo múi giờ Việt Nam (UTC+7).</p>
+    <div class="card table-card"><div class="section-head table-heading"><div><h2>Bản ghi cảm biến</h2><p id="data-count">Đang tải dữ liệu…</p></div></div><form class="filters search-form" id="d-form" novalidate><label class="field">Tìm theo<select id="d-by"><option value="time">Thời gian</option><option value="temperature">Nhiệt độ</option><option value="humidity">Độ ẩm</option><option value="light">Ánh sáng</option></select></label><label class="field grow">Giá trị<span class="search"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input type="text" id="d-q" inputmode="decimal" autocomplete="off" placeholder="dd/MM/yy HH:mm:ss"></span></label><button class="btn quiet" type="button" id="d-cl"><i class="ph ph-x" aria-hidden="true"></i> Xóa</button></form><div class="tw" tabindex="0" role="region" aria-label="Bảng dữ liệu cảm biến, cuộn ngang trên màn hình nhỏ"><table><thead><tr><th scope="col">Mã bản ghi</th><th scope="col">Cảm biến</th><th scope="col" class="num">Giá trị đo</th><th scope="col" id="d-time-head" aria-sort="descending"><button class="sort" id="d-sort">Thời gian ghi nhận</button></th></tr></thead><tbody id="d-body"></tbody></table></div><div class="pager" id="d-pg"></div></div>
    </section>
    <section id="p-history" class="hide" aria-label="Lịch sử điều khiển">
-    <div class="card table-card"><div class="section-head table-heading"><div><h2>Nhật ký điều khiển</h2><p>Theo dõi từng lệnh từ lúc gửi đến khi có phản hồi.</p></div></div><div class="filters history-filters"><label class="field grow">Thời gian<span class="search"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input type="search" id="h-q" placeholder="dd/MM/yy HH:mm:ss"></span></label><label class="field">Thiết bị<select id="h-dev"><option value="">Tất cả thiết bị</option><option value="light">Đèn</option><option value="pump">Máy bơm nước</option></select></label><label class="field">Hành động<select id="h-act"><option value="">Tất cả</option><option value="on">Bật</option><option value="off">Tắt</option></select></label><label class="field">Kết quả<select id="h-res"><option value="">Tất cả</option><option value="pending">Đang xử lý</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="timeout">Hết thời gian chờ</option></select></label><label class="field">Sắp xếp<select id="h-ord"><option value="new">Mới nhất</option><option value="old">Cũ nhất</option></select></label><button class="icon-btn clear-filter" id="h-cl" aria-label="Xóa bộ lọc" title="Xóa bộ lọc"><i class="ph ph-x" aria-hidden="true"></i></button></div><div class="tw" tabindex="0" role="region" aria-label="Bảng lịch sử điều khiển, cuộn ngang trên màn hình nhỏ"><table><thead><tr><th scope="col">Mã lệnh</th><th scope="col">Thiết bị</th><th scope="col">Hành động</th><th scope="col">Người thao tác</th><th scope="col">Kết quả</th><th scope="col">Thời gian gửi</th><th scope="col"><span class="sr">Chi tiết</span></th></tr></thead><tbody id="h-body"></tbody></table></div><div class="pager" id="h-pg"></div></div>
+    <div class="card table-card"><div class="section-head table-heading"><h2>Lịch sử điều khiển</h2></div><div class="filters history-filters"><label class="field grow">Thời gian<span class="search"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input type="search" id="h-q" placeholder="dd/MM/yy HH:mm:ss"></span></label><label class="field">Thiết bị<select id="h-dev"><option value="">Tất cả thiết bị</option><option value="light">Đèn</option><option value="pump">Máy bơm nước</option></select></label><label class="field">Hành động<select id="h-act"><option value="">Tất cả</option><option value="on">Bật</option><option value="off">Tắt</option></select></label><label class="field">Kết quả<select id="h-res"><option value="">Tất cả</option><option value="pending">Đang xử lý</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="timeout">Hết thời gian chờ</option></select></label><label class="field">Sắp xếp<select id="h-ord"><option value="new">Mới nhất</option><option value="old">Cũ nhất</option></select></label><button class="icon-btn clear-filter" id="h-cl" aria-label="Xóa bộ lọc" title="Xóa bộ lọc"><i class="ph ph-x" aria-hidden="true"></i></button></div><div class="tw" tabindex="0" role="region" aria-label="Bảng lịch sử điều khiển, cuộn ngang trên màn hình nhỏ"><table><thead><tr><th scope="col">Mã lệnh</th><th scope="col">Thiết bị</th><th scope="col">Hành động</th><th scope="col">Người thao tác</th><th scope="col">Kết quả</th><th scope="col">Thời gian gửi</th><th scope="col"><span class="sr">Chi tiết</span></th></tr></thead><tbody id="h-body"></tbody></table></div><div class="pager" id="h-pg"></div></div>
    </section>
-   <section id="p-profile" class="hide" aria-label="Hồ sơ"><div class="profile-layout"><section class="card prof" id="prof"></section><section class="profile-resources"><div class="section-head"><div><h2>Tài nguyên dự án</h2><p>Các liên kết để tìm hiểu thêm về Smart Garden.</p></div></div><div class="links" id="links"></div><div class="profile-note"><i class="ph ph-lock-key" aria-hidden="true"></i><p>Thông tin hồ sơ được lưu trên trình duyệt này. Bạn có thể chỉnh sửa hoặc xóa bất cứ lúc nào.</p></div></section></div></section>
+   <section id="p-profile" class="hide" aria-label="Hồ sơ"><div class="profile-layout"><section class="card prof" id="prof"></section><section class="profile-resources"><div class="section-head"><h2>Tài nguyên dự án</h2></div><div class="links" id="links"></div></section></div></section>
   </main>
+
  </div>
 </div>
 <dialog id="dlg" class="dialog" aria-labelledby="dialog-title"></dialog><div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

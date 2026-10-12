@@ -1,7 +1,7 @@
 /* Khung ứng dụng, điều hướng và trạng thái phiên mô phỏng. */
 (function(){
   const $=SG.$,S=SG.state;
-  const pages={home:['Tổng quan','GÓC NHÌN KHU VƯỜN','Những thay đổi nhỏ, được theo dõi rõ ràng.'],data:['Dữ liệu cảm biến','LẮNG NGHE MÔI TRƯỜNG','Mỗi lần đo là một chút hiểu biết về khu vườn.'],history:['Lịch sử điều khiển','MỌI THAO TÁC, ĐỀU RÕ RÀNG','Tra cứu lệnh, phản hồi và thời gian thực hiện.'],profile:['Hồ sơ','KHÔNG GIAN CÁ NHÂN','Thông tin của bạn và những tài nguyên của dự án.']};
+  const pages={home:'Tổng quan',data:'Dữ liệu cảm biến',history:'Lịch sử điều khiển',profile:'Hồ sơ'};
   function closeMenu(focus=false){
     const wasOpen=$('#side').classList.contains('open');$('#side').classList.remove('open');$('#scrim').classList.remove('open');$('#menu').setAttribute('aria-expanded','false');$('.workspace').inert=false;document.body.style.overflow='';$('#side').inert=window.innerWidth<=1000;
     if(focus&&wasOpen)$('#menu').focus();
@@ -13,7 +13,7 @@
     if(!pages[page])page='home';
     SG.currentPage=page;Object.keys(pages).forEach(key=>$('#p-'+key).classList.toggle('hide',key!==page));
     document.querySelectorAll('.side nav [data-p]').forEach(button=>{if(button.dataset.p===page)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
-    const [title,kicker,description]=pages[page];$('#crumb').textContent=title;$('#page-title').textContent=title;$('#page-kicker').textContent=kicker;$('#page-description').textContent=description;document.title=title+' · Smart Garden';
+    const title=pages[page];$('#crumb').textContent=title;$('#page-title').textContent=title;document.title=title+' · Smart Garden';
     closeMenu();
     ({home:SG.renderHome,data:SG.renderData,history:SG.renderHist,profile:SG.renderProfile})[page]();
     if(focus){$('#page-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
