@@ -139,12 +139,16 @@
 }
 
 .chart-box {
-    position: relative
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 130px;
+    height: clamp(190px, 30vh, 340px)
 }
 
 .chart-box svg {
     display: block;
     width: 100%;
+    height: 100%;
     touch-action: pan-y
 }
 
@@ -162,7 +166,9 @@
     box-shadow: 0 8px 24px #203c3018;
     border-radius: 9px;
     padding: 8px 12px;
-    white-space: nowrap;
+    white-space: normal;
+    width: max-content;
+    max-width: 100%;
     pointer-events: none;
     font-size: 12px;
     line-height: 1.9
@@ -208,26 +214,51 @@
     font-size: 13px
 }
 
-.chart-multiple {
-    display: grid;
-    gap: 5px
+.single-chart {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0
 }
 
-.chart-multiple .mini-chart {
-    padding-top: 4px
+.single-chart > :not(.chart-box) {
+    flex-shrink: 0
 }
 
-.chart-multiple .mini-chart+.mini-chart {
-    border-top: 1px solid var(--line)
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 10px;
+    color: var(--mute);
+    font-size: 11px
 }
 
-.chart-multiple .chart-summary {
-    margin-bottom: 0
+.chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px
 }
 
-.chart-multiple .chart-summary b {
-    color: var(--ink);
-    font-weight: 500
+.chart-line-key {
+    width: 16px;
+    border-top: 2px solid var(--chart-color)
+}
+
+.chart-note {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    color: var(--mute);
+    font-size: 11px
+}
+
+/* Cửa sổ thấp vẫn đủ chỗ cho chú giải, vùng vẽ và thống kê. */
+@media (min-width: 1001px) {
+    #p-home {
+        min-height: 520px;
+    }
+
 }
 
 .chart-keyboard {

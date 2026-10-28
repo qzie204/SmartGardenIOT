@@ -1,0 +1,361 @@
+{
+  "info": {
+    "name": "Smart Garden API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Đăng ký rồi Login để lưu token. Control gửi lệnh thật khi dùng broker/ESP thật. Internal endpoints chỉ dành cho kiểm thử được chủ động thực hiện."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "username",
+      "value": "student"
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "internalKey",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"name\": \"Sinh viên\",\n  \"email\": \"student@example.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"token\", pm.response.json().data.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Latest sensors",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/sensors/latest?limit=15"
+      }
+    },
+    {
+      "name": "Sensor page",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/sensors?type=all&page=1&limit=10&sort=desc"
+      }
+    },
+    {
+      "name": "Filter sensor values",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/sensors?by=temperature&q=27&page=1&limit=10"
+      }
+    },
+    {
+      "name": "Devices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/devices"
+      }
+    },
+    {
+      "name": "Pump on - sends real command",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/devices/control",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"led1\": \"on\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Pump off - sends real command",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/devices/control",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"led1\": \"off\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Light on - sends real command",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/devices/control",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"led2\": \"on\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Light off - sends real command",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/devices/control",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"led2\": \"off\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Action history",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/actions?device=all&page=1&limit=10&sort=desc"
+      }
+    },
+    {
+      "name": "My profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/users/me"
+      }
+    },
+    {
+      "name": "Update profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/profile",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sinh viên\",\n  \"studentId\": \"\",\n  \"className\": \"\",\n  \"email\": \"student@example.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Change password - revokes sessions",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/profile/password",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"old_password\": \"{{password}}\",\n  \"new_password\": \"CHANGE_THIS_PASSWORD\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/auth/logout"
+      }
+    },
+    {
+      "name": "Internal sensor ingestion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Internal-Key",
+            "value": "{{internalKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/sensors",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"temperature\": 27.5,\n  \"humidity\": 65,\n  \"light\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "name": "Internal ACK - requires matching pending command",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Internal-Key",
+            "value": "{{internalKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/devices/status",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"led1\": \"on\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    }
+  ]
+}

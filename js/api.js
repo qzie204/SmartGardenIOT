@@ -1,97 +1,336 @@
+/* REST API và WebSocket. Không tạo dữ liệu cảm biến hoặc xác nhận giả. */
 (function () {
   const listeners = {};
-  SG.on = (event, callback) => (listeners[event] ||= []).push(callback);
-  SG.emit = (event, payload) => (listeners[event] || []).forEach(fn => fn(payload));
-  const now = Date.now();
-  const S = SG.state = {ready:false, online:true, updated:now, readings:[], commands:[], user:null, nextResult:'success', dev:{light:{on:true,pending:false},pump:{on:false,pending:false}}};
-  let readingID = 0, commandID = 0;
-  function batch(ts) {
-    const t = ts / 1000;
-    const values = {temperature:+(27.2 + 1.8 * Math.sin(t / 58) + .3 * Math.cos(t / 13)).toFixed(1), humidity:Math.round(66 + 6 * Math.cos(t / 90) + Math.sin(t / 17)), light:Math.round(780 + 220 * Math.sin(t / 110) + 25 * Math.cos(t / 21))};
-    return SG.TYPES.map(type => ({id:++readingID,type,value:values[type],ts}));
-  } //tính toán giả lập giá trị cho chart lấy theo thời gian thực
-  for (let i = 59; i >= 0; i--) S.readings.push(...batch(now - i * 5000));
-  S.readings.reverse();
-  const seed = [
-    ['light','off','success',18], ['pump','on','failed',14], ['pump','on','success',10],
-    ['light','off','timeout',7], ['light','on','success',4], ['pump','off','success',1]
-  ];
-  S.commands = seed.map(([device,action,result,minutes]) => ({id:++commandID,device,action,result,user:'demo',sentAt:now-minutes*60000,respondedAt:result==='timeout'?null:now-minutes*60000+900,reason:result==='failed'?'Thiết bị mô phỏng từ chối lệnh.':result==='timeout'?'Không có phản hồi trong thời gian chờ mô phỏng.':null})).reverse();
-  function refresh() {
-    if (!S.online) return;
-    const ts = Date.now();
-    S.readings = [...batch(ts).reverse(), ...S.readings].slice(0,600);
-    S.updated = ts;
+  let token = SG.storage.get('sg_token') || SG.storage.get('sg_token', 'sessionStorage') || '';
+  let currentUser = null;
+  let socket = null;
+  let reconnectTimer = null;
+  let sending = false;
+  let liveRevision = 0;
+  let refreshNumber = 0;
+  let statusRevision = 0;
+  const completed = new Set();
+  const state = SG.state = {
+    ready: false,
+    online: false,
+    busy: false,
+    updated: 0,
+    readings: [],
+    commands: [],
+    user: null,
+    dev: {
+      light: { on: false, known: false, pending: false },
+      pump: { on: false, known: false, pending: false }
+    }
+  };
+
+  SG.on = function subscribe(event, callback) {
+    if (!listeners[event]) {
+      listeners[event] = [];
+    }
+    listeners[event].push(callback);
+  };
+
+  SG.emit = function emit(event, payload) {
+    if (!listeners[event]) {
+      return;
+    }
+    for (const callback of listeners[event]) {
+      callback(payload);
+    }
+  };
+
+  function clearSession() {
+    token = '';
+    currentUser = null;
+    clearTimeout(reconnectTimer);
+    SG.storage.remove('sg_token');
+    SG.storage.remove('sg_token', 'sessionStorage');
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+    state.online = false;
+  }
+
+  async function request(path, method = 'GET', body) {
+    const headers = {};
+    if (token) {
+      headers.Authorization = 'Bearer ' + token;
+    }
+    const options = { method, headers, signal: AbortSignal.timeout(30000) };
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(body);
+    }
+    let response;
+    try {
+      response = await fetch('/api/v1' + path, options);
+    } catch (_) {
+      throw new Error('Không kết nối được backend. Hãy chạy npm start và mở http://localhost:8080.');
+    }
+    let result;
+    try {
+      result = await response.json();
+    } catch (_) {
+      throw new Error('Phản hồi không phải JSON. Hãy mở trang qua backend ở cổng 8080.');
+    }
+    if (!response.ok) {
+      const error = new Error(result.error || 'Yêu cầu chưa thực hiện được.');
+      error.status = response.status;
+      error.data = result.data;
+      if (response.status === 401 && token && path !== '/auth/login') {
+        clearSession();
+        SG.emit('expired');
+      }
+      throw error;
+    }
+    return result.data;
+  }
+
+  function updateStatus(status) {
+    state.online = status.online;
+    state.busy = status.busy;
+    state.updated = status.lastSensorAt;
+    SG.emit('status');
+  }
+
+  function updateDevices(snapshot) {
+    for (const device of snapshot.devices) {
+      const item = state.dev[device.device_key];
+      if (!item) {
+        continue;
+      }
+      item.on = device.current_status === 'on';
+      item.known = device.current_status !== null;
+      item.pending = device.pending;
+    }
+    updateStatus(snapshot.status);
+  }
+
+  function updateReadings(readings) {
+    const unique = new Map();
+    for (const reading of [...readings, ...state.readings]) {
+      unique.set(reading.id, reading);
+    }
+    state.readings = Array.from(unique.values()).sort(function newestFirst(left, right) {
+      return right.ts - left.ts || right.id - left.id;
+    }).slice(0, 45);
+    state.ready = true;
     SG.emit('data');
   }
-  setTimeout(() => { S.ready = true; SG.emit('data'); }, 350);
-  setInterval(() => { if (S.user) refresh(); }, 5000);
-  const ACCOUNT_KEY = 'sg_accounts_v1';
-  function accounts() {
-    try { const list=JSON.parse(SG.storage.get(ACCOUNT_KEY)||'[]');return Array.isArray(list)?list:[]; } catch (_) { return []; }
+
+  function updateCommand(command, notify = true) {
+    const index = state.commands.findIndex(function sameCommand(item) {
+      return item.id === command.id;
+    });
+    if (index >= 0) {
+      state.commands[index] = command;
+    } else {
+      state.commands.push(command);
+    }
+    state.commands.sort(function newestFirst(left, right) {
+      return right.id - left.id;
+    });
+    state.commands = state.commands.slice(0, 100);
+    const device = state.dev[command.device];
+    device.pending = command.result === 'pending';
+    if (command.result === 'success') {
+      device.on = command.action === 'on';
+      device.known = true;
+    } else if (command.result !== 'pending') {
+      device.known = false;
+    }
+    SG.emit('cmd');
+    if (notify && command.result !== 'pending' && !completed.has(command.id)) {
+      completed.add(command.id);
+      if (completed.size > 500) {
+        completed.delete(completed.values().next().value);
+      }
+      SG.emit('complete', command);
+    }
   }
-  const pause = ms => new Promise(resolve=>setTimeout(resolve,ms));
-  async function passwordHash(password,salt) {
-    if(!window.crypto?.subtle)throw new Error('Trình duyệt chưa hỗ trợ đăng ký cục bộ. Hãy mở bằng Chrome hoặc Edge.');
-    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-    const bytes=Uint8Array.from(salt.match(/.{2}/g),byte=>parseInt(byte,16));
-    const result=await crypto.subtle.deriveBits({name:'PBKDF2',salt:bytes,iterations:100000,hash:'SHA-256'},key,256);
-    return Array.from(new Uint8Array(result),byte=>byte.toString(16).padStart(2,'0')).join('');
+
+  async function refresh() {
+    refreshNumber += 1;
+    const currentRefresh = refreshNumber;
+    const revisionAtStart = liveRevision;
+    const statusAtStart = statusRevision;
+    const [readings, devices, commands] = await Promise.all([
+      request('/sensors/latest?limit=15'), request('/devices'), request('/actions?limit=20')
+    ]);
+    if (currentRefresh !== refreshNumber) {
+      return;
+    }
+    updateReadings(readings);
+    // Không để snapshot HTTP cũ ghi đè trạng thái vừa nhận qua WebSocket.
+    if (revisionAtStart !== liveRevision) {
+      return;
+    }
+    if (statusAtStart !== statusRevision) {
+      devices.status = {
+        online: state.online,
+        busy: state.busy,
+        lastSensorAt: state.updated
+      };
+    }
+    updateDevices(devices);
+    // Snapshot chỉ dựng lịch sử; không phát thông báo cho lệnh cũ.
+    state.commands = commands.items;
+    SG.emit('cmd');
   }
+
+  function connectSocket() {
+    if (!token || socket) {
+      return;
+    }
+    let protocol = 'ws:';
+    if (location.protocol === 'https:') {
+      protocol = 'wss:';
+    }
+    const connection = new WebSocket(protocol + '//' + location.host + '/ws');
+    socket = connection;
+    connection.onopen = function authenticateSocket() {
+      connection.send(JSON.stringify({ type: 'auth', token }));
+    };
+    connection.onmessage = function receiveEvent(event) {
+      const message = JSON.parse(event.data);
+      if (message.type === 'command' || message.type === 'devices') {
+        liveRevision += 1;
+      }
+      if (message.type === 'status') {
+        statusRevision += 1;
+      }
+      if (message.type === 'ready') {
+        updateStatus(message.data);
+        refresh().catch(function refreshFailed(error) {
+          SG.toast(error.message, 'error');
+        });
+      } else if (message.type === 'sensors') {
+        updateReadings(message.data);
+      } else if (message.type === 'command') {
+        updateCommand(message.data);
+      } else if (message.type === 'devices') {
+        updateDevices(message.data);
+      } else if (message.type === 'status') {
+        updateStatus(message.data);
+      }
+    };
+    connection.onclose = function reconnect(event) {
+      if (socket !== connection) {
+        return;
+      }
+      socket = null;
+      state.online = false;
+      SG.emit('status');
+      if (event.code === 4401) {
+        clearSession();
+        SG.emit('expired');
+        return;
+      }
+      if (token) {
+        reconnectTimer = setTimeout(connectSocket, 3000);
+      }
+    };
+  }
+
+  async function login(username, password, remember) {
+    const result = await request('/auth/login', 'POST', { username, password });
+    clearSession();
+    token = result.token;
+    currentUser = result.user;
+    let storage = 'sessionStorage';
+    if (remember) {
+      storage = 'localStorage';
+    }
+    SG.storage.set('sg_token', token, storage);
+    state.readings = [];
+    state.commands = [];
+    completed.clear();
+    await refresh();
+    connectSocket();
+    return result;
+  }
+
+  async function restore() {
+    if (!token) {
+      return null;
+    }
+    currentUser = await request('/users/me');
+    await refresh();
+    connectSocket();
+    return currentUser;
+  }
+
+  async function send(device) {
+    if (!state.online || state.busy || sending || !state.dev[device]) {
+      return;
+    }
+    sending = true;
+    state.busy = true;
+    state.dev[device].pending = true;
+    SG.emit('status');
+    let key = 'led1';
+    if (device === 'light') {
+      key = 'led2';
+    }
+    let action = 'on';
+    if (state.dev[device].on && state.dev[device].known) {
+      action = 'off';
+    }
+    try {
+      const commands = await request('/devices/control', 'POST', { [key]: action });
+      commands.forEach(function receiveResult(command) {
+        updateCommand(command);
+      });
+    } catch (error) {
+      if (Array.isArray(error.data)) {
+        error.data.forEach(function receiveFailure(command) {
+          updateCommand(command);
+        });
+      } else {
+        SG.toast(error.message, 'error');
+      }
+    } finally {
+      sending = false;
+      state.dev[device].pending = false;
+      try {
+        updateDevices(await request('/devices'));
+      } catch (_) {
+        state.online = false;
+        SG.emit('status');
+      }
+    }
+  }
+
   SG.api = {
-    async login(username,password) {
-      const key=username.trim().toLowerCase();await pause(350);
-      if(key==='demo'&&password==='demo123')return {username:'demo'};
-      const account=accounts().find(a=>a.username===key);
-      if(account&&await passwordHash(password,account.salt)===account.hash)return {username:key};
-      throw new Error('Tài khoản hoặc mật khẩu chưa đúng. Vui lòng thử lại.');
-    },
-    async register({name,email,username,password,confirm}) {
-      name=name.trim();email=email.trim().toLowerCase();username=username.trim().toLowerCase();
-      if(!name||!email||!username||!password||!confirm)throw new Error('Vui lòng điền đầy đủ thông tin đăng ký.');
-      if(name.length>80)throw new Error('Họ và tên tối đa 80 ký tự.');
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Email chưa đúng định dạng.');
-      if(!/^[a-z0-9_.-]{3,30}$/.test(username))throw new Error('Tài khoản gồm 3–30 chữ cái không dấu, chữ số, dấu chấm, gạch dưới hoặc gạch ngang.');
-      if(password.length<8||password.length>128)throw new Error('Mật khẩu cần từ 8 đến 128 ký tự.');
-      if(password!==confirm)throw new Error('Mật khẩu nhập lại chưa khớp.');
-      const duplicate=list=>username==='demo'||list.some(a=>a.username===username||a.email===email);
-      if(duplicate(accounts()))throw new Error('Tài khoản hoặc email này đã được đăng ký.');
-      const salt=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
-      const hash=await passwordHash(password,salt),list=accounts();
-      if(duplicate(list))throw new Error('Tài khoản hoặc email này đã được đăng ký.');
-      list.push({username,name,email,salt,hash});
-      if(!SG.storage.set(ACCOUNT_KEY,JSON.stringify(list)))throw new Error('Không thể lưu tài khoản. Hãy cho phép trình duyệt lưu dữ liệu rồi thử lại.');
-      return {username};
-    },
-    hasUser(username) { return username==='demo'||accounts().some(a=>a.username===username); },
-    userInfo(username) { const a=accounts().find(a=>a.username===username);return a?{name:a.name,email:a.email}:{name:'',email:''}; },
-    forgot() { return new Promise(resolve => setTimeout(() => resolve({simulated:true}),500)); },
+    login,
+    restore,
     refresh,
-    setOnline(online) {
-      S.online = Boolean(online);
-      if (!S.online) S.commands.filter(c=>c.result==='pending').forEach(c=>c.interrupted=true);
-      if (S.online) refresh(); else SG.emit('data');
-      SG.emit('cmd');
+    send,
+    request,
+    userInfo() {
+      if (currentUser) {
+        return currentUser.profile;
+      }
+      return {};
     },
-    setNextResult(result) { if (['success','failed','timeout'].includes(result)) S.nextResult = result; },
-    send(device) {
-      if (!S.user || !S.online || !S.dev[device] || S.dev[device].pending) return false;
-      const state = S.dev[device], outcome = S.nextResult;
-      S.nextResult = 'success';
-      const command = {id:++commandID,device,action:state.on?'off':'on',result:'pending',user:S.user,sentAt:Date.now(),respondedAt:null,reason:null};
-      S.commands.unshift(command);
-      state.pending = true;
-      SG.emit('cmd');
-      setTimeout(() => {
-        command.result = command.interrupted || !S.online ? 'timeout' : outcome;
-        command.respondedAt = command.result==='timeout' ? null : Date.now();
-        command.reason = command.result==='failed'?'Thiết bị mô phỏng từ chối lệnh.':command.result==='timeout'?'Không nhận được phản hồi trong thời gian chờ mô phỏng.':null;
-        state.pending = false;
-        // Chỉ đổi trạng thái sau phản hồi thành công, không bật/tắt lạc quan.
-        if (command.result==='success') state.on = command.action==='on';
-        SG.emit('cmd'); SG.emit('complete',command);
-      }, outcome==='timeout'?3000:1100);
-      return true;
+    register(body) {
+      return request('/auth/register', 'POST', body);
+    },
+    forgot(value) {
+      return request('/auth/forgot', 'POST', { account: value });
+    },
+    async saveProfile(profile) {
+      currentUser = await request('/profile', 'PUT', profile);
+      return currentUser.profile;
+    },
+    async logout() {
+      try {
+        await request('/auth/logout', 'POST');
+      } finally {
+        clearSession();
+      }
     }
   };
 })();

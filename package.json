@@ -1,0 +1,30 @@
+{
+  "name": "smart-garden",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart Garden: Express, MySQL, MQTT và WebSocket",
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "dev": "node --watch backend/src/server.js",
+    "db:init": "node backend/scripts/init-db.js",
+    "setup": "node backend/scripts/configure.js",
+    "test": "node --test backend/test/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mqtt": "^5.16.1",
+    "mysql2": "^3.24.6",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "aedes": "^1.2.0"
+  }
+}
